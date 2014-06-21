@@ -1,0 +1,35 @@
+AllCops:
+  Include:
+    - config.ru
+    - bin
+    - lib
+    - Gemfile
+    - Guardfile
+    - Rakefile
+  Exclude:
+    - vendor/**/*
+    - pkg/**/*
+
+ClassLength:
+  Enabled: false
+
+Documentation:
+  Enabled: false
+
+LineLength:
+  Enabled: false
+
+MethodLength:
+  Enabled: false
+
+RegexpLiteral:
+  Enabled: false
+
+AlignHash:
+  Enabled: false
+
+SpecialGlobalVars:
+  Enabled: false
+
+CyclomaticComplexity:
+  Enabled: false
