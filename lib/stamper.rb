@@ -15,9 +15,12 @@ module Stamper
   def self.stamp(opts)
     opts = DEFAULTS.merge(opts)
 
-    stamp, files = opts[:stamp], Dir.glob(opts[:files])
-    includes, excludes = opts[:includes], opts[:excludes]
-    respect_first_marks, dryrun = opts[:respect_first_marks], opts[:dryrun]
+    stamp = opts[:stamp]
+    files = opts[:files].is_a?(Array) ? opts[:files] : Dir.glob(opts[:files])
+    includes = opts[:includes].map { |i| Regexp.new(i) }
+    excludes = opts[:excludes].map { |e| Regexp.new(e) }
+    respect_first_marks = opts[:respect_first_marks].map { |m| Regexp.new(m) }
+    dryrun = opts[:dryrun]
     quiet = opts[:quiet]
 
     if dryrun
@@ -29,8 +32,8 @@ module Stamper
     stamped = 0
     # For each file that matches pattern(s)
     files.each do |file|
-      next unless includes.any? { |include| Regexp.new(include).match(file) }
-      next if excludes.any? { |exclude| Regexp.new(exclude).match(file) }
+      next unless includes.any? { |include| include.match(file) }
+      next if excludes.any? { |exclude| exclude.match(file) }
 
       # Check the header of the file. Match on first lines or shifted by one line.
       # If match, do nothing, else stamp file (or report only -- use colorize).
@@ -46,12 +49,15 @@ module Stamper
         next
       end
 
-      if respect_first_marks.any? { |mark| Regexp.new(mark).match(contents.first) }
+      if respect_first_marks.any? { |mark| mark.match(contents.first) }
         shifted = contents.shift
         contents = shifted + "\n" + stamp + contents.join("\n")
       else
         contents = stamp + contents.join("\n")
       end
+
+      # Make sure files have a new line at the end of the file
+      contents += "\n" if contents[-1] != "\n"
 
       IO.write(file, contents)
       stamped += 1
