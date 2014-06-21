@@ -6,9 +6,10 @@ module Stamper
   DEFAULTS = {
     files: '**/*',
     includes: ['.*\.rb$'],
-    excludes: ['/vendor/'],
+    excludes: ['^vendor/'],
     respect_first_marks: ['^#', '^<!'],
-    dryrun: false
+    dryrun: false,
+    quiet: false
   }
 
   def self.stamp(opts)
@@ -17,12 +18,12 @@ module Stamper
     stamp, files = opts[:stamp], Dir.glob(opts[:files])
     includes, excludes = opts[:includes], opts[:excludes]
     respect_first_marks, dryrun = opts[:respect_first_marks], opts[:dryrun]
-    log = opts[:log]
+    quiet = opts[:quiet]
 
     if dryrun
-      log.info "Checking files that need stamping...\n\n" unless log.nil?
+      puts "Checking files that need stamping...\n\n" unless quiet
     else
-      log.info "Stamping files...\n\n" unless log.nil?
+      puts "Stamping files...\n\n" unless quiet
     end
 
     stamped = 0
@@ -40,7 +41,7 @@ module Stamper
       next if contents[1..-1].join("\n").start_with?(stamp)
 
       if dryrun
-        log.info file unless log.nil?
+        puts file unless quiet
         stamped += 1
         next
       end
@@ -54,16 +55,16 @@ module Stamper
 
       IO.write(file, contents)
       stamped += 1
-      log.info file unless log.nil?
+      puts file unless quiet
     end
 
     print "\nFinished. ".green
     if dryrun
-      log.info "#{stamped} files need stamping.".send(stamped > 0 ? :red : :green) unless log.nil?
+      puts "#{stamped} files need stamping.".send(stamped > 0 ? :red : :green) unless quiet
     else
-      log.info "#{stamped} files were stamped.".green unless log.nil?
+      puts "#{stamped} files were stamped.".green unless quiet
     end
 
-    dryrun && stampled > 0 ? false : true
+    dryrun && stamped > 0 ? false : true
   end
 end

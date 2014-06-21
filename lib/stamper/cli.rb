@@ -1,16 +1,17 @@
 require 'optparse'
 require 'ostruct'
+require 'logger'
 require 'stamper'
 
 module Stamper
-  def self.CLI(args)
+  def self.CLI(args) # rubocop:disable MethodName
     options = OpenStruct.new
 
     optparse = OptionParser.new do |opts|
       opts.banner = 'Usage: stamper -s STAMPFILE [options]'
       opts.separator ''
-      opts.separator 'Prepends a blurb of text to any files you specify while respecting'\
-                     ' a list of includes and exclude patterns for maximum flexibility.'
+      opts.separator "Prepends a blurb of text to any files you specify while respecting\n"\
+                     'a list of includes and exclude patterns for maximum flexibility.'
       opts.separator ''
 
       opts.separator 'Required:'
@@ -44,15 +45,34 @@ module Stamper
         '--exclude \'REGEXP\'',
         "Do not stamp files that match this pattern. Can be used multiple times.\n"\
         "\t\t\t\t\tEvaluated after includes. Defaults to #{Stamper::DEFAULTS[:excludes]}."
-      ) do |include|
+      ) do |exclude|
         options.excludes ||= []
-        options.excludes << excludes
+        options.excludes << exclude
+      end
+
+      opts.on(
+        '-r',
+        '--respect \'REGEXP\'',
+        "If the first line in the file matches this pattern,\n"\
+        "\t\t\t\t\tplace stamp under that line. \n"\
+        "\t\t\t\t\tCan be used multiple times. Defaults to #{Stamper::DEFAULTS[:respect_first_marks]}."
+      ) do |mark|
+        options.marks ||= []
+        options.marks << mark
       end
 
       opts.on(
         '-d',
         '--dry-run',
         'Report which files need stamping, but don\'t make any changes.'
+      ) do |dryrun|
+        options.dryrun = dryrun
+      end
+
+      opts.on(
+        '-q',
+        '--quiet',
+        'Do not print any output.'
       ) do |dryrun|
         options.dryrun = dryrun
       end
@@ -68,7 +88,7 @@ module Stamper
       end
     end
 
-    optparse.parse!
+    optparse.parse!(args)
 
     if options.stamp.nil?
       puts "No stamp file specified.\n\n"
@@ -81,9 +101,9 @@ module Stamper
       files: options.path ? options.path + '/**/*' : Stamper::DEFAULTS[:files],
       includes: options.includes ? options.includes : Stamper::DEFAULTS[:includes],
       excludes: options.excludes ? options.excludes : Stamper::DEFAULTS[:excludes],
-      dryrun: options.dryrun,
       respect_first_marks: options.marks ? options.marks : Stamper::DEFAULTS[:respect_first_marks],
-      log: Logger.new(STDOUT)
+      dryrun: options.dryrun,
+      quiet: options.quiet
     )
   end
 end
