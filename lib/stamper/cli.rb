@@ -5,11 +5,12 @@ require 'stamper'
 module Stamper
   def self.CLI(args)
     options = OpenStruct.new
-    options.includes = []
-    options.excludes = []
 
     optparse = OptionParser.new do |opts|
       opts.banner = 'Usage: stamper -s STAMPFILE [options]'
+      opts.separator ''
+      opts.separator 'Prepends a blurb of text to any files you specify while respecting'\
+                     ' a list of includes and exclude patterns for maximum flexibility.'
       opts.separator ''
 
       opts.separator 'Required:'
@@ -32,8 +33,9 @@ module Stamper
         '-i',
         '--include \'REGEXP\'',
         "Only stamp files that match this pattern. Can be used multiple times.\n"\
-        "\t\t\t\t\tDefaults to only *.rb files."
+        "\t\t\t\t\tDefaults to #{Stamper::DEFAULTS[:includes]}."
       ) do |include|
+        options.includes ||= []
         options.includes << include
       end
 
@@ -41,8 +43,9 @@ module Stamper
         '-e',
         '--exclude \'REGEXP\'',
         "Do not stamp files that match this pattern. Can be used multiple times.\n"\
-        "\t\t\t\t\tEvaluated after includes. Defaults to '/vendor/'."
+        "\t\t\t\t\tEvaluated after includes. Defaults to #{Stamper::DEFAULTS[:excludes]}."
       ) do |include|
+        options.excludes ||= []
         options.excludes << excludes
       end
 
@@ -68,19 +71,19 @@ module Stamper
     optparse.parse!
 
     if options.stamp.nil?
-      puts 'No stamp file specified.'
+      puts "No stamp file specified.\n\n"
       puts optparse
       exit
     end
 
     Stamper.stamp(
-      IO.read(options.stamp),
-      options.path ? Dir.glob(options.path + '/**/*') : Dir.glob('**/*'),
-      options.includes.empty? ? ['.*\.rb$'] : options.includes,
-      options.excludes.empty? ? ['/vendor/'], options.excludes
-      options.dryrun,
-      Logger.new(STDOUT),
-      options.marks ? options.marks : ['^#', '^<!']
+      stamp: IO.read(options.stamp),
+      files: options.path ? options.path + '/**/*' : Stamper::DEFAULTS[:files],
+      includes: options.includes ? options.includes : Stamper::DEFAULTS[:includes],
+      excludes: options.excludes ? options.excludes : Stamper::DEFAULTS[:excludes],
+      dryrun: options.dryrun,
+      respect_first_marks: options.marks ? options.marks : Stamper::DEFAULTS[:respect_first_marks],
+      log: Logger.new(STDOUT)
     )
   end
 end

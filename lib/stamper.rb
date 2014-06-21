@@ -3,10 +3,22 @@ require 'colorize'
 require 'stamper/version'
 
 module Stamper
-  def self.stamp(
-    stamp, files = Dir.glob('**/*'), includes = ['.*\.rb$'], excludes = ['/vendor/'],
-    dryrun = false, log = nil, respect_first_marks = ['^#', '^<!']
-  )
+  DEFAULTS = {
+    files: '**/*',
+    includes: ['.*\.rb$'],
+    excludes: ['/vendor/'],
+    respect_first_marks: ['^#', '^<!'],
+    dryrun: false
+  }
+
+  def self.stamp(opts)
+    opts = DEFAULTS.merge(opts)
+
+    stamp, files = opts[:stamp], Dir.glob(opts[:files])
+    includes, excludes = opts[:includes], opts[:excludes]
+    respect_first_marks, dryrun = opts[:respect_first_marks], opts[:dryrun]
+    log = opts[:log]
+
     if dryrun
       log.info "Checking files that need stamping...\n\n" unless log.nil?
     else
