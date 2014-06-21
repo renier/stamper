@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require 'stamper/cli'
+
+Stamper.CLI(ARGV)

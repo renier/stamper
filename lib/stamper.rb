@@ -1,12 +1,16 @@
 #!/usr/bin/env ruby
 require 'colorize'
+require 'stamper/version'
 
 module Stamper
-  def self.stamp(stamp, files = [], includes = [], excludes = [], checkonly = false)
-    if checkonly
-      puts "Checking files that need stamping...\n\n"
+  def self.stamp(
+    stamp, files = Dir.glob('**/*'), includes = ['.*\.rb$'], excludes = ['/vendor/'],
+    dryrun = false, log = nil, respect_first_marks = ['^#', '^<!']
+  )
+    if dryrun
+      log.info "Checking files that need stamping...\n\n" unless log.nil?
     else
-      puts "Stamping files...\n\n"
+      log.info "Stamping files...\n\n" unless log.nil?
     end
 
     stamped = 0
@@ -23,14 +27,13 @@ module Stamper
       contents = contents.split("\n")
       next if contents[1..-1].join("\n").start_with?(stamp)
 
-      if checkonly
-        puts file
+      if dryrun
+        log.info file unless log.nil?
         stamped += 1
         next
       end
 
-      # TODO: have a list of recognized file headers
-      if contents[0].start_with?('#') || contents[0].start_with?('<!')
+      if respect_first_marks.any? { |mark| Regexp.new(mark).match(contents.first) }
         shifted = contents.shift
         contents = shifted + "\n" + stamp + contents.join("\n")
       else
@@ -39,16 +42,16 @@ module Stamper
 
       IO.write(file, contents)
       stamped += 1
-      puts file
+      log.info file unless log.nil?
     end
 
     print "\nFinished. ".green
-    if checkonly
-      puts "#{stamped} files need stamping.".send(stamped > 0 ? :red : :green)
+    if dryrun
+      log.info "#{stamped} files need stamping.".send(stamped > 0 ? :red : :green) unless log.nil?
     else
-      puts "#{stamped} files were stamped.".green
+      log.info "#{stamped} files were stamped.".green unless log.nil?
     end
 
-    checkonly && stampled > 0 ? false : true
+    dryrun && stampled > 0 ? false : true
   end
 end
